@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<title>게시판</title>
+	<style>
+	</style>
+	<script th:src="@{/js/jquery-3.7.1.min.js}"></script>
+	<script>
+		$(document).ready(function(){
+			// 페이지가 로딩될 때마다 가계부 내역 불러옴
+			list();
+			
+			// category를 선택이 바뀔 때마다 함수 실행하는 이벤트 걸기
+			$('#category').on("change", list);
+			
+			// 키보드에 검색어가 입력될 때마다 함수 실행하는 이벤트 걸기
+			$("#searchWord").on("keyup", list);			
+			
+			 // 동적으로 생성된 .read 요소들에 대해 클릭 이벤트를 처리
+		    $(document).on("click", ".read", function(){
+		    	//alert('이벤트 위임 함수 정상 작동');
+		        let boardNum =  $(this).closest('tr').data('board-num');  // 현재 행의 boardNum 가져오기
+		        $(location).attr("href", "read?boardNum=" + boardNum); // 원하는 페이지로 이동
+		    });
+		});	
+		//
+		function list(){
+			//alert('list함수 실행');
+			$.ajax({
+				url: 'list',
+				type: 'post',
+				data: { category: $("#category").val(), 
+						searchWord: $("#searchWord").val()},
+				success: function(list){
+					$('#output').empty();
+					
+					$(list).each(function(i, obj){
+						let soldoutStatus = obj.soldout ? '판매완료' : '판매중';
+						let readBoard = obj.boardNum;
+						let html = `
+							<tr data-board-num="${obj.boardNum}">
+								<th>${obj.boardNum}</th>
+								<td>${soldoutStatus}</td>
+								<td>${obj.category}</td>
+								<td class="read"><a href="#">${obj.title}</a></td>
+								<td>${obj.price}</td>
+								<td>${obj.memberId}</td>
+								<td>${obj.inputDate}</td>
+							</tr>						
+						`;
+						$('#output').append(html)
+					});
+					
+				},
+				error: function(e){
+					alert('조회 실패');
+				}
+			})
+		}
+	</script>
+</head>
+<body>
+	<h1>[ 거래 게시판 ]</h1>
+	<a th:href="@{/board/write}"><button id="register">글쓰기</button></a>
+	<br><br>
+	
+	검색조건 &nbsp;
+	<select id="category">
+		<option value="all" selected>전체 카테고리 보기</option> 
+		<option value="com">컴퓨터</option> 
+		<option value="cam">카메라</option> 
+		<option value="car">자동차</option> 
+	</select> &nbsp;
+	
+	<input type="text" id="searchWord" placeholder="검색어를 입력하세요.">
+	<br>
+	
+	<!-- 목록 출력 영역 -->
+	<table>
+		<thead>
+			<tr>
+				<th style="width:80px">번호</th>
+				<th style="width:80px">상태</th>
+				<th style="width:100px">카테고리</th>
+				<th style="width:250px">제목</th>
+				<th style="width:100px">판매가격</th>
+				<th style="width:100px">작성자</th>
+				<th style="width:200px">작성일</th>
+			</tr>
+		</thead>
+		<tbody id="output">
+			<!-- 내역 출력 영역 -->
+		</tbody>
+	</table>
+</body>
+</html>

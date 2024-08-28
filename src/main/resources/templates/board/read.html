@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko"
+	  xmlns:th="http://www.thymeleaf.org"
+	  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<meta charset="UTF-8">
+	<title>게시판</title>
+	<style>
+		
+	</style>
+	<script th:src="@{/js/jquery-3.7.1.min.js}"></script>
+	<script>
+		$(document).ready(function() {
+			list();
+			$('#repB').click(inputComment);
+			status();
+		});
+		
+		$(document).on("click", "#delB", function() {
+		    let boardNum = $(this).data('num'); // data-num 속성을 읽어옴
+		    console.log(boardNum); // 콘솔에서 값 확인
+		    $(location).attr("href", "del?boardNum=" + boardNum); // 삭제 요청으로 이동
+		});
+		
+		$(document).on("click", "#buyB", function() {
+		    let boardNum = $(this).data('num'); // data-num 속성을 읽어옴
+		    console.log(boardNum); // 콘솔에서 값 확인
+		    $(location).attr("href", "buy?boardNum=" + boardNum); // 구매 요청으로 이동
+		});
+		
+	      // 댓글 저장
+        function inputComment(){
+            if($("#reply").val() == ''){
+                alert('내용을 입력하세요');
+                return false;
+            }
+            else {
+                // 문자열 2개를 서버로 보냄
+                let data = { reply : $("#reply").val()
+                			, boardNum : $("#buyB").data('num')};
+                $.ajax({
+                    url: 'input',
+                    type: 'post',
+                    data: data,
+                    success: function () {
+                        alert('댓글 저장 성공');
+                        // 페이지를 나가지 않으므로 지우는 것까지 코드로 구현해줘야 함
+                        $("#reply").val('');
+                        list();
+                    },
+                    error: function () {
+                        alert('댓글 저장 실패');
+                    }
+                })
+
+            }
+
+        }
+	      // 댓글 리스트 불러오기
+	      function list(){
+	    	  $.ajax({
+	    		  url: 'replyList',
+	    		  type: 'post',
+	    		  data: {boardNum : $("#buyB").data('num')},
+	    		  success: function(list){
+	    			  $("#showComment").append(list);
+	    		  }
+	    		  
+	    	  })
+	      }
+	      
+	      // 판매중 종료 여부에 따라 구매 버튼 사라지게 하기
+	      function status(){
+	    	  if($('#status').text() == '판매 완료'){
+	    		  $('#buyB').hide();
+	    	  }
+	      }
+		
+	</script>
+</head>
+<body>
+<h1>[ 판매상품 상세보기 ]</h1>
+<table>
+<tr>
+	<th>번호</th>
+	<td>[[${boardNum}]]</td>
+</tr>
+<tr>
+	<th>판매자</th>
+	<td>[[${dto.memberId}]]</td>
+</tr>
+<tr>
+	<th>카테고리</th>
+	<td>[[${dto.category}]]</td>
+</tr>
+<tr>
+	<th>제목</th>
+	<td>[[${dto.title}]]</td>
+</tr>
+<tr>
+	<th>내용</th>
+	<td><pre>[[${dto.contents}]]</pre></td>
+</tr>
+<tr>
+	<th>판매가격</th>
+	<td>[[${dto.price}]]</td>
+</tr>
+<tr>
+	<th>상태</th>
+	<td id="status" th:text="${dto.soldout ? '판매 완료' : '판매 중'}"></td>
+</tr>
+<tr>
+	<th>구매자</th>
+	<td>[[${dto.buyerId}]]</td>
+</tr>
+<tr>
+	<th> </th>
+	<td><button th:if="${#authentication.name == dto.memberId}" th:data-num="${dto.boardNum}" id="delB">삭제하기</button>
+	<button th:if="${#authentication.name != dto.memberId}" th:data-num="${dto.boardNum}" id="buyB">구매하기</button></td>
+</tr>
+<tr>
+	<td>리플입력</td>
+	<td><input type="text" style="width:400px" id="reply"><button id="repB">저장</button></td>
+</tr>
+	<thead id="show comment">
+	</thead>
+</table>
+
+
+</body>
+</html>
